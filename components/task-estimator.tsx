@@ -19,6 +19,7 @@ import type { Task, ModelStats as ModelStatsType } from "@/lib/types"
 import type * as tf from "@tensorflow/tfjs"
 import { BrainCircuit, CheckCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { EstimationExplanation } from "@/components/estimation-explanation"
 
 export function TaskEstimator() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -332,6 +333,13 @@ export function TaskEstimator() {
                       </div>
                     )}
                   </div>
+
+                  {/* Adicionar a explicação da estimativa baseada em regras */}
+                  <EstimationExplanation
+                    description={description}
+                    taskType={taskType}
+                    estimatedPoints={estimatedPoints}
+                  />
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
