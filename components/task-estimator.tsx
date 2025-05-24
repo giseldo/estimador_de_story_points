@@ -13,6 +13,7 @@ import { TaskHistory } from "@/components/task-history"
 import { ModelStats } from "@/components/model-stats"
 import { AIAnalysisStatus } from "@/components/ai-analysis-status"
 import { CSVImport } from "@/components/csv-import"
+import { KeywordsConfiguration } from "@/components/keywords-configuration"
 import { estimateStoryPoints } from "@/lib/estimator"
 import { trainModel, predictStoryPoints, saveModel, loadModel } from "@/lib/ml-model"
 import type { Task, ModelStats as ModelStatsType } from "@/lib/types"
@@ -255,11 +256,12 @@ export function TaskEstimator() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="estimate">Estimar Task</TabsTrigger>
           <TabsTrigger value="import">Importar CSV</TabsTrigger>
           <TabsTrigger value="history">Histórico ({tasks.length})</TabsTrigger>
           <TabsTrigger value="model">Modelo de ML</TabsTrigger>
+          <TabsTrigger value="config">Configurações</TabsTrigger>
         </TabsList>
 
         <TabsContent value="estimate">
@@ -459,6 +461,10 @@ export function TaskEstimator() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="config">
+          <KeywordsConfiguration />
         </TabsContent>
       </Tabs>
     </div>
