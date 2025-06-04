@@ -24,7 +24,6 @@ import { BrainCircuit, CheckCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { EstimationExplanation } from "@/components/estimation-explanation"
 import { AIFallbackNotice } from "@/components/ai-fallback-notice"
-import { Loader2, AlertCircle } from "lucide-react"
 
 export function TaskEstimator() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -47,10 +46,6 @@ export function TaskEstimator() {
   const [isAiLoading, setIsAiLoading] = useState(false)
   const [aiError, setAiError] = useState<string | null>(null)
   const [importSuccess, setImportSuccess] = useState<number | null>(null)
-  const [bertEstimatedPoints, setBertEstimatedPoints] = useState<number | null>(null)
-  const [isBertLoading, setIsBertLoading] = useState(false)
-  const [bertError, setBertError] = useState<string | null>(null)
-  const [bertConfidence, setBertConfidence] = useState<number | null>(null)
 
   // Inicializar TensorFlow.js e carregar o modelo
   useEffect(() => {
@@ -199,8 +194,6 @@ export function TaskEstimator() {
       mlEstimatedPoints: mlEstimatedPoints,
       aiEstimatedPoints: aiEstimatedPoints,
       aiModel: aiModel,
-      bertEstimatedPoints: bertEstimatedPoints,
-      bertConfidence: bertConfidence,
       finalPoints: manualPoints,
       createdAt: new Date().toISOString(),
     }
@@ -267,67 +260,11 @@ export function TaskEstimator() {
     setAiModel(null)
     setManualPoints(null)
     setAiError(null)
-    setBertEstimatedPoints(null)
-    setIsBertLoading(false)
-    setBertError(null)
-    setBertConfidence(null)
   }
 
   const handleTrainModel = () => {
     if (tasks.length >= 5) {
       trainModelWithTasks(tasks)
-    }
-  }
-
-  const handleBertEstimate = async () => {
-    if (!title || !description) return
-
-    setBertEstimatedPoints(null)
-    setIsBertLoading(true)
-    setBertError(null)
-    setBertConfidence(null)
-
-    try {
-      // First try the alternative client-side approach
-      try {
-        const { estimateWithBertAlternative } = await import("@/lib/bert-alternative")
-        const result = await estimateWithBertAlternative(title, description)
-
-        setBertEstimatedPoints(result.points)
-        setBertConfidence(result.confidence)
-        setManualPoints(result.points)
-        return
-      } catch (clientError) {
-        console.log("Client-side alternative failed, trying API:", clientError)
-      }
-
-      // Fallback to API
-      const response = await fetch("/api/estimate-bert", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title,
-          description,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        setBertError(data.userMessage || data.error || "Erro ao obter estimativa do BERT")
-        return
-      }
-
-      setBertEstimatedPoints(data.points)
-      setBertConfidence(data.confidence)
-      setManualPoints(data.points)
-    } catch (error) {
-      console.error("Erro ao obter estimativa do BERT:", error)
-      setBertError("Análise de texto indisponível. Use outros métodos de estimativa.")
-    } finally {
-      setIsBertLoading(false)
     }
   }
 
@@ -427,6 +364,7 @@ export function TaskEstimator() {
                       )}
                     </div>
 
+                    {/* Adicionar a explicação da estimativa baseada em regras */}
                     <EstimationExplanation
                       description={description}
                       taskType={taskType}
@@ -453,9 +391,6 @@ export function TaskEstimator() {
                           >
                             Analisar com Grok
                           </Button>
-                          <Button variant="outline" size="sm" onClick={handleBertEstimate} disabled={isBertLoading}>
-                            Análise de Texto
-                          </Button>
                         </div>
                       </div>
 
@@ -468,64 +403,15 @@ export function TaskEstimator() {
                         onSwitchModel={handleSwitchModel}
                       />
 
-                      {isBertLoading && (
-                        <div className="flex flex-col items-center justify-center p-4 border rounded-lg bg-slate-50">
-                          <div className="flex items-center gap-2">
-                            <Loader2 className="h-4 w-4 animate-spin text-slate-600" />
-                            <p className="text-sm font-medium text-slate-600">Analisando texto...</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {bertError && (
-                        <Alert variant="destructive" className="bg-red-50 border-red-200">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertTitle className="flex items-center justify-between">
-                            <span>Erro na análise de texto</span>
-                            <Button variant="outline" size="sm" onClick={handleBertEstimate} className="ml-2">
-                              Tentar Novamente
-                            </Button>
-                          </AlertTitle>
-                          <AlertDescription className="mt-2">
-                            <p className="text-sm">{bertError}</p>
+                      {!isAiLoading && !aiEstimatedPoints && !aiError && (
+                        <Alert variant="default" className="bg-blue-50 text-blue-800 border-blue-200">
+                          <BrainCircuit className="h-4 w-4" />
+                          <AlertTitle>Análise com IA disponível</AlertTitle>
+                          <AlertDescription>
+                            Utilize os modelos Groq ou Grok para obter uma estimativa baseada em IA avançada.
                           </AlertDescription>
                         </Alert>
                       )}
-
-                      {bertEstimatedPoints !== null && !isBertLoading && !bertError && (
-                        <div className="flex flex-col items-center justify-center p-4 border rounded-lg bg-slate-50">
-                          <p className="text-sm font-medium text-slate-600">Análise de Texto Avançada</p>
-                          <div className="mt-2 flex items-center justify-center">
-                            <Badge
-                              variant="secondary"
-                              className="text-2xl px-4 py-2 bg-amber-100 text-amber-800 hover:bg-amber-100"
-                            >
-                              {bertEstimatedPoints} {bertEstimatedPoints === 1 ? "ponto" : "pontos"}
-                            </Badge>
-                          </div>
-                          {bertConfidence !== null && (
-                            <p className="text-xs text-slate-500 mt-2">
-                              Confiança: {(bertConfidence * 100).toFixed(1)}%
-                            </p>
-                          )}
-                        </div>
-                      )}
-
-                      {!isAiLoading &&
-                        !aiEstimatedPoints &&
-                        !aiError &&
-                        !isBertLoading &&
-                        !bertEstimatedPoints &&
-                        !bertError && (
-                          <Alert variant="default" className="bg-blue-50 text-blue-800 border-blue-200">
-                            <BrainCircuit className="h-4 w-4" />
-                            <AlertTitle>Análise com IA disponível</AlertTitle>
-                            <AlertDescription>
-                              Utilize os modelos Groq, Grok ou análise de texto avançada para obter estimativas baseadas
-                              em IA.
-                            </AlertDescription>
-                          </Alert>
-                        )}
 
                       {/* Show fallback notice when AI has issues */}
                       {aiError &&
@@ -533,11 +419,7 @@ export function TaskEstimator() {
                           aiError.includes("CREDIT_LIMIT") ||
                           aiError.includes("não está disponível") ||
                           aiError.includes("configuração da API")) && (
-                          <AIFallbackNotice
-                            ruleBasedPoints={estimatedPoints}
-                            mlPoints={mlEstimatedPoints}
-                            bertPoints={bertEstimatedPoints}
-                          />
+                          <AIFallbackNotice ruleBasedPoints={estimatedPoints} mlPoints={mlEstimatedPoints} />
                         )}
                     </div>
 
@@ -576,6 +458,7 @@ export function TaskEstimator() {
               </CardFooter>
             </Card>
 
+            {/* Adicionar os indicadores de legibilidade */}
             {description && description.trim().length > 0 && <ReadabilityIndicators description={description} />}
           </div>
         </TabsContent>

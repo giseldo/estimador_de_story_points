@@ -113,7 +113,7 @@ export function HelpGuide() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-green-600" />
-                  <CardTitle>6 Métodos de Estimativa Disponíveis</CardTitle>
+                  <CardTitle>5 Métodos de Estimativa Disponíveis</CardTitle>
                 </div>
                 {expandedSections.methods ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </div>
@@ -308,56 +308,11 @@ export function HelpGuide() {
                 </div>
               </div>
 
-              {/* Método 5: BERT */}
+              {/* Método 5: Ajuste Manual */}
               <div className="border rounded-lg p-4 bg-amber-50">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="flex items-center justify-center w-8 h-8 bg-amber-600 text-white rounded-full text-sm font-bold">
                     5
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5 text-amber-600" />
-                    <h3 className="font-semibold text-amber-900">IA com BERT (Fine-tuned)</h3>
-                    <Badge variant="secondary" className="bg-amber-100 text-amber-700">
-                      Treinado Especificamente
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className="space-y-3 ml-11">
-                  <p className="text-sm text-amber-800">
-                    <strong>Como funciona:</strong> Modelo DistilBERT pré-treinado e ajustado especificamente para
-                    estimar story points com dados de projetos reais.
-                  </p>
-
-                  <div className="bg-white rounded p-3 border border-amber-200">
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div>
-                        <span className="font-medium text-amber-700">Modelo:</span> DistilBERT Fine-tuned
-                      </div>
-                      <div>
-                        <span className="font-medium text-amber-700">Treinamento:</span> Específico para story points
-                      </div>
-                      <div>
-                        <span className="font-medium text-amber-700">Dados:</span> Projetos reais
-                      </div>
-                      <div>
-                        <span className="font-medium text-amber-700">Precisão:</span> Alta para padrões conhecidos
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-xs text-amber-700">
-                    <BookOpen className="h-3 w-3" />
-                    <span>Combina título e descrição • Especializado • Indica confiança</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Método 6: Ajuste Manual */}
-              <div className="border rounded-lg p-4 bg-amber-50">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="flex items-center justify-center w-8 h-8 bg-amber-600 text-white rounded-full text-sm font-bold">
-                    6
                   </div>
                   <div className="flex items-center gap-2">
                     <Settings className="h-5 w-5 text-amber-600" />
@@ -403,13 +358,10 @@ export function HelpGuide() {
                       <strong>2. Use IA</strong> (Groq ou Grok) para análise mais sofisticada
                     </p>
                     <p className="text-sm">
-                      <strong>3. Compare com BERT</strong> para estimativas baseadas em dados de projetos reais
+                      <strong>3. Consulte ML</strong> quando tiver dados históricos suficientes
                     </p>
                     <p className="text-sm">
-                      <strong>4. Consulte ML</strong> quando tiver dados históricos suficientes
-                    </p>
-                    <p className="text-sm">
-                      <strong>5. Ajuste manualmente</strong> baseado no seu conhecimento específico
+                      <strong>4. Ajuste manualmente</strong> baseado no seu conhecimento específico
                     </p>
                   </div>
                 </AlertDescription>
