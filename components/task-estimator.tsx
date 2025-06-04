@@ -16,8 +16,10 @@ import { CSVImport } from "@/components/csv-import"
 import { KeywordsConfiguration } from "@/components/keywords-configuration"
 import { ReadabilityIndicators } from "@/components/readability-indicators"
 import { HelpGuide } from "@/components/help-guide"
+import { BertModelLoader } from "@/components/bert-model-loader"
 import { estimateStoryPoints } from "@/lib/estimator"
 import { trainModel, predictStoryPoints, saveModel, loadModel } from "@/lib/ml-model"
+import { classifyWithBert, isBertModelLoaded } from "@/lib/bert-classifier"
 import type { Task, ModelStats as ModelStatsType } from "@/lib/types"
 import type * as tf from "@tensorflow/tfjs"
 import { BrainCircuit, CheckCircle, Cpu } from "lucide-react"
@@ -50,6 +52,7 @@ export function TaskEstimator() {
   const [isBertLoading, setIsBertLoading] = useState(false)
   const [bertError, setBertError] = useState<string | null>(null)
   const [importSuccess, setImportSuccess] = useState<number | null>(null)
+  const [bertModelStatus, setBertModelStatus] = useState<"not-loaded" | "loading" | "loaded" | "error">("not-loaded")
 
   // Inicializar TensorFlow.js e carregar o modelo
   useEffect(() => {
@@ -184,45 +187,20 @@ export function TaskEstimator() {
     setBertError(null)
 
     try {
-      const response = await fetch("/api/estimate-bert", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title,
-          description,
-        }),
-      })
+      const result = await classifyWithBert(title, description)
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        console.error("Erro na resposta BERT:", data)
-
-        if (response.status === 404) {
-          setBertError("Modelo BERT não encontrado. Verifique se o modelo existe no Hugging Face.")
-        } else if (response.status === 503) {
-          setBertError(data.userMessage || "Modelo BERT está carregando. Tente novamente em alguns segundos.")
-        } else if (response.status === 429) {
-          setBertError(data.userMessage || "Limite de requisições atingido. Tente novamente mais tarde.")
-        } else if (response.status === 401) {
-          setBertError(data.userMessage || "Erro de configuração da API do Hugging Face.")
-        } else {
-          setBertError(data.userMessage || data.error || "Erro ao obter estimativa do BERT")
-        }
-        return
+      if (result) {
+        setBertEstimatedPoints(result.points)
+        setBertConfidence(result.confidence)
+        // Atualizar a estimativa manual com a estimativa do BERT
+        setManualPoints(result.points)
+        console.log("Estimativa BERT bem-sucedida:", result)
+      } else {
+        setBertError("Erro ao processar com BERT. Verifique se o modelo está carregado.")
       }
-
-      setBertEstimatedPoints(data.points)
-      setBertConfidence(data.confidence)
-      // Atualizar a estimativa manual com a estimativa do BERT
-      setManualPoints(data.points)
-
-      console.log("Estimativa BERT bem-sucedida:", data)
     } catch (error) {
       console.error("Erro ao obter estimativa do BERT:", error)
-      setBertError("Erro de conexão. Verifique sua internet e tente novamente.")
+      setBertError("Erro ao processar com BERT. Verifique se o modelo está carregado.")
     } finally {
       setIsBertLoading(false)
     }
@@ -481,12 +459,12 @@ export function TaskEstimator() {
                     {/* Nova Seção de BERT */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <Label>Análise com BERT Fine-tuned</Label>
+                        <Label>Análise com BERT Fine-tuned (Local)</Label>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={handleBertEstimate}
-                          disabled={isBertLoading}
+                          disabled={isBertLoading || !isBertModelLoaded()}
                           className="bg-gradient-to-r from-orange-50 to-red-50 border-orange-200 hover:from-orange-100 hover:to-red-100"
                         >
                           <Cpu className="h-4 w-4 mr-2" />
@@ -500,7 +478,7 @@ export function TaskEstimator() {
                           <Cpu className="h-4 w-4 text-orange-600 animate-spin" />
                           <AlertTitle className="text-orange-900">Processando com BERT</AlertTitle>
                           <AlertDescription className="text-orange-800">
-                            O modelo BERT fine-tuned está analisando sua tarefa...
+                            O modelo BERT fine-tuned está analisando sua tarefa localmente...
                           </AlertDescription>
                         </Alert>
                       )}
@@ -508,7 +486,7 @@ export function TaskEstimator() {
                       {bertEstimatedPoints !== null && !isBertLoading && (
                         <Alert className="bg-gradient-to-r from-orange-50 to-red-50 border-orange-200">
                           <Cpu className="h-4 w-4 text-orange-600" />
-                          <AlertTitle className="text-orange-900">Estimativa BERT</AlertTitle>
+                          <AlertTitle className="text-orange-900">Estimativa BERT (Local)</AlertTitle>
                           <AlertDescription className="text-orange-800">
                             <div className="flex items-center justify-between mt-2">
                               <div>
@@ -534,6 +512,7 @@ export function TaskEstimator() {
                               size="sm"
                               onClick={handleBertEstimate}
                               className="ml-2 h-6 text-xs"
+                              disabled={!isBertModelLoaded()}
                             >
                               Tentar novamente
                             </Button>
@@ -541,13 +520,23 @@ export function TaskEstimator() {
                         </Alert>
                       )}
 
-                      {!isBertLoading && !bertEstimatedPoints && !bertError && (
+                      {!isBertLoading && !bertEstimatedPoints && !bertError && isBertModelLoaded() && (
                         <Alert variant="default" className="bg-orange-50 text-orange-800 border-orange-200">
                           <Cpu className="h-4 w-4" />
-                          <AlertTitle>Análise com BERT disponível</AlertTitle>
+                          <AlertTitle>Análise com BERT disponível (Local)</AlertTitle>
                           <AlertDescription>
-                            Utilize o modelo BERT fine-tuned especificamente para estimativa de story points, treinado
-                            com dados de projetos reais.
+                            Utilize o modelo BERT fine-tuned que roda localmente no seu navegador, especializado para
+                            estimativa de story points.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
+                      {!isBertModelLoaded() && (
+                        <Alert variant="default" className="bg-gray-50 text-gray-800 border-gray-200">
+                          <Cpu className="h-4 w-4" />
+                          <AlertTitle>BERT não disponível</AlertTitle>
+                          <AlertDescription>
+                            O modelo BERT precisa ser carregado primeiro. Vá para a aba "Modelo de ML" para carregar.
                           </AlertDescription>
                         </Alert>
                       )}
@@ -646,6 +635,9 @@ export function TaskEstimator() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Componente do modelo BERT */}
+            <BertModelLoader onStatusChange={setBertModelStatus} />
           </div>
         </TabsContent>
 
