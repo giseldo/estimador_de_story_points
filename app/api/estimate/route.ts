@@ -31,22 +31,61 @@ export async function POST(req: Request) {
 
     let result
 
-    if (model === "groq") {
-      result = await generateText({
-        model: groq("llama-3.1-8b-instant"),
-        prompt,
-        temperature: 0.2,
-        maxTokens: 10,
-      })
-    } else if (model === "grok") {
-      result = await generateText({
-        model: xai("grok-1"),
-        prompt,
-        temperature: 0.2,
-        maxTokens: 10,
-      })
-    } else {
-      return Response.json({ error: "Modelo não suportado" }, { status: 400 })
+    try {
+      if (model === "groq") {
+        result = await generateText({
+          model: groq("llama-3.1-8b-instant"),
+          prompt,
+          temperature: 0.2,
+          maxTokens: 10,
+        })
+      } else if (model === "grok") {
+        result = await generateText({
+          model: xai("grok-1"),
+          prompt,
+          temperature: 0.2,
+          maxTokens: 10,
+        })
+      } else {
+        return Response.json({ error: "Modelo não suportado" }, { status: 400 })
+      }
+    } catch (apiError: any) {
+      console.error("Erro na API do modelo:", apiError)
+
+      // Check for specific error types
+      if (apiError.message?.includes("credits") || apiError.message?.includes("spending limit")) {
+        return Response.json(
+          {
+            error: "CREDIT_LIMIT_EXCEEDED",
+            message:
+              "Limite de créditos da API atingido. Tente novamente mais tarde ou use a estimativa baseada em regras.",
+            userMessage:
+              "O serviço de IA está temporariamente indisponível devido ao limite de créditos. Use a estimativa baseada em regras por enquanto.",
+          },
+          { status: 429 },
+        )
+      }
+
+      if (apiError.message?.includes("rate limit")) {
+        return Response.json(
+          {
+            error: "RATE_LIMIT_EXCEEDED",
+            message: "Muitas solicitações. Tente novamente em alguns segundos.",
+            userMessage: "Muitas solicitações simultâneas. Aguarde alguns segundos e tente novamente.",
+          },
+          { status: 429 },
+        )
+      }
+
+      // Generic API error
+      return Response.json(
+        {
+          error: "API_ERROR",
+          message: "Erro na comunicação com o modelo de IA. Tente novamente ou use a estimativa baseada em regras.",
+          userMessage: "Erro temporário no serviço de IA. Tente novamente em alguns instantes.",
+        },
+        { status: 503 },
+      )
     }
 
     // Extrair apenas o número da resposta
@@ -67,6 +106,13 @@ export async function POST(req: Request) {
     }
   } catch (error) {
     console.error("Erro ao estimar story points:", error)
-    return Response.json({ error: "Erro ao processar a solicitação" }, { status: 500 })
+    return Response.json(
+      {
+        error: "INTERNAL_ERROR",
+        message: "Erro interno do servidor",
+        userMessage: "Erro interno. Tente novamente ou use a estimativa baseada em regras.",
+      },
+      { status: 500 },
+    )
   }
 }
