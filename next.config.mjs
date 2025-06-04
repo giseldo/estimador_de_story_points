@@ -7,23 +7,23 @@ const nextConfig = {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         // Core modules
-        buffer: require.resolve('buffer'),
-        crypto: require.resolve('crypto-browserify'),
-        stream: require.resolve('stream-browserify'),
-        assert: require.resolve('assert'),
+        buffer: 'buffer',
+        crypto: 'crypto-browserify',
+        stream: 'stream-browserify',
+        assert: 'assert',
         http: false,
         https: false,
         os: false,
-        url: require.resolve('url'),
+        url: 'url',
         zlib: false,
         fs: false,
-        path: require.resolve('path-browserify'),
-        util: require.resolve('util'),
-        process: require.resolve('process/browser'),
-        events: require.resolve('events'),
+        path: 'path-browserify',
+        util: 'util',
+        process: 'process/browser',
+        events: 'events',
         
         // Specific modules needed by onnxruntime-web
-        long: require.resolve('long'),
+        long: 'long',
         
         // Additional fallbacks
         querystring: false,
@@ -70,7 +70,7 @@ const nextConfig = {
         'crypto': 'crypto-browserify',
         'stream': 'stream-browserify',
         'path': 'path-browserify',
-        'buffer': require.resolve('buffer'),
+        'buffer': 'buffer',
       }
 
       // Configurações específicas para onnxruntime-web
