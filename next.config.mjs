@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, webpack }) => {
     // Configurações específicas para o lado do cliente
     if (!isServer) {
       // Polyfills completos para módulos Node.js
@@ -46,7 +46,7 @@ const nextConfig = {
 
       // Adicionar plugins para polyfills - CRÍTICO para onnxruntime-web
       config.plugins.push(
-        new config.webpack.ProvidePlugin({
+        new webpack.ProvidePlugin({
           Buffer: ['buffer', 'Buffer'],
           process: 'process/browser',
         })
@@ -54,7 +54,7 @@ const nextConfig = {
 
       // Adicionar plugin para definir Buffer globalmente
       config.plugins.push(
-        new config.webpack.DefinePlugin({
+        new webpack.DefinePlugin({
           'global.Buffer': 'Buffer',
           'global.process': 'process',
         })
