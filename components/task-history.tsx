@@ -55,6 +55,12 @@ export function TaskHistory({ tasks }: TaskHistoryProps) {
                         {task.aiModel === "groq" ? "Groq" : "Grok"}: {task.aiEstimatedPoints}
                       </Badge>
                     )}
+                    {/* Add this new badge for BERT estimations */}
+                    {task.bertEstimatedPoints !== null && task.bertEstimatedPoints !== task.finalPoints && (
+                      <Badge variant="outline" className="text-amber-600">
+                        BERT: {task.bertEstimatedPoints}
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 <div className="text-xs text-slate-500">{new Date(task.createdAt).toLocaleDateString()}</div>

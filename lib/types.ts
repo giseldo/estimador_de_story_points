@@ -9,6 +9,8 @@ export interface Task {
   mlEstimatedPoints?: number | null
   aiEstimatedPoints?: number | null
   aiModel?: string | null
+  bertEstimatedPoints?: number | null
+  bertConfidence?: number | null
 }
 
 export interface ModelStats {
