@@ -30,6 +30,7 @@ import {
   Play,
   Download,
   RotateCcw,
+  Sparkles,
 } from "lucide-react"
 
 export function HelpGuide() {
@@ -228,7 +229,7 @@ export function HelpGuide() {
                     <Bot className="h-5 w-5 text-purple-600" />
                     <h3 className="font-semibold text-purple-900">IA com Groq (Llama 3.1)</h3>
                     <Badge variant="secondary" className="bg-purple-100 text-purple-700">
-                      IA Avançada
+                      IA Generativa
                     </Badge>
                   </div>
                 </div>
@@ -308,47 +309,65 @@ export function HelpGuide() {
                 </div>
               </div>
 
-              {/* Método 5: BERT */}
-              <div className="border rounded-lg p-4 bg-amber-50">
+              {/* Método 5: BERT Fine-tuned - NOVO */}
+              <div className="border rounded-lg p-4 bg-gradient-to-r from-orange-50 to-red-50">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="flex items-center justify-center w-8 h-8 bg-amber-600 text-white rounded-full text-sm font-bold">
+                  <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-full text-sm font-bold">
                     5
                   </div>
                   <div className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5 text-amber-600" />
-                    <h3 className="font-semibold text-amber-900">IA com BERT (Fine-tuned)</h3>
-                    <Badge variant="secondary" className="bg-amber-100 text-amber-700">
-                      Treinado Especificamente
+                    <Sparkles className="h-5 w-5 text-orange-600" />
+                    <h3 className="font-semibold text-orange-900">BERT Fine-tuned Especializado</h3>
+                    <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+                      NOVO • Especializado
                     </Badge>
                   </div>
                 </div>
 
                 <div className="space-y-3 ml-11">
-                  <p className="text-sm text-amber-800">
-                    <strong>Como funciona:</strong> Modelo DistilBERT pré-treinado e ajustado especificamente para
-                    estimar story points com dados de projetos reais.
+                  <p className="text-sm text-orange-800">
+                    <strong>Como funciona:</strong> Modelo DistilBERT fine-tuned especificamente para estimativa de
+                    story points, treinado com dados reais de projetos de software.
                   </p>
 
-                  <div className="bg-white rounded p-3 border border-amber-200">
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div>
-                        <span className="font-medium text-amber-700">Modelo:</span> DistilBERT Fine-tuned
+                  <div className="bg-white rounded p-3 border border-orange-200">
+                    <h4 className="text-xs font-medium text-orange-700 mb-2">CARACTERÍSTICAS ESPECIAIS</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs">
+                        <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                        <span>Fine-tuned com dados reais de story points</span>
                       </div>
-                      <div>
-                        <span className="font-medium text-amber-700">Treinamento:</span> Específico para story points
+                      <div className="flex items-center gap-2 text-xs">
+                        <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                        <span>Combina título + descrição para análise contextual</span>
                       </div>
-                      <div>
-                        <span className="font-medium text-amber-700">Dados:</span> Projetos reais
-                      </div>
-                      <div>
-                        <span className="font-medium text-amber-700">Precisão:</span> Alta para padrões conhecidos
+                      <div className="flex items-center gap-2 text-xs">
+                        <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                        <span>Retorna confiança da predição</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 text-xs text-amber-700">
-                    <BookOpen className="h-3 w-3" />
-                    <span>Combina título e descrição • Especializado • Indica confiança</span>
+                  <div className="bg-white rounded p-3 border border-orange-200">
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span className="font-medium text-orange-700">Modelo Base:</span> DistilBERT
+                      </div>
+                      <div>
+                        <span className="font-medium text-orange-700">Treinamento:</span> Fine-tuning específico
+                      </div>
+                      <div>
+                        <span className="font-medium text-orange-700">Dados:</span> Projetos reais
+                      </div>
+                      <div>
+                        <span className="font-medium text-orange-700">Precisão:</span> Especializada em story points
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-xs text-orange-700">
+                    <Sparkles className="h-3 w-3" />
+                    <span>Hugging Face • Fine-tuned • Confiança da predição • Especializado</span>
                   </div>
                 </div>
               </div>
@@ -400,10 +419,10 @@ export function HelpGuide() {
                       <strong>1. Comece</strong> com a estimativa baseada em regras (sempre disponível)
                     </p>
                     <p className="text-sm">
-                      <strong>2. Use IA</strong> (Groq ou Grok) para análise mais sofisticada
+                      <strong>2. Use BERT</strong> para análise especializada em story points
                     </p>
                     <p className="text-sm">
-                      <strong>3. Compare com BERT</strong> para estimativas baseadas em dados de projetos reais
+                      <strong>3. Compare com IA</strong> (Groq ou Grok) para análise generativa
                     </p>
                     <p className="text-sm">
                       <strong>4. Consulte ML</strong> quando tiver dados históricos suficientes
@@ -427,7 +446,7 @@ export function HelpGuide() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Brain className="h-5 w-5 text-emerald-600" />
-                  <CardTitle>Como Funciona o Machine Learning</CardTitle>
+                  <CardTitle>Como Funcionam os Modelos de ML</CardTitle>
                 </div>
                 {expandedSections.deeplearning ? (
                   <ChevronUp className="h-4 w-4" />
@@ -435,17 +454,17 @@ export function HelpGuide() {
                   <ChevronDown className="h-4 w-4" />
                 )}
               </div>
-              <CardDescription>Entenda em detalhes o funcionamento da rede neural</CardDescription>
+              <CardDescription>Entenda em detalhes o funcionamento dos modelos de machine learning</CardDescription>
             </CardHeader>
           </CollapsibleTrigger>
 
           <CollapsibleContent>
             <CardContent className="space-y-6">
-              {/* Arquitetura da Rede */}
+              {/* Arquitetura da Rede Neural Local */}
               <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
                 <h3 className="font-semibold text-emerald-900 mb-3 flex items-center gap-2">
                   <Layers className="h-4 w-4" />
-                  Arquitetura da Rede Neural
+                  Rede Neural Local (TensorFlow.js)
                 </h3>
 
                 <div className="space-y-4">
@@ -474,6 +493,91 @@ export function HelpGuide() {
                         <div>• 7 neurônios (Fibonacci)</div>
                         <div>• Ativação Softmax</div>
                         <div>• Probabilidades</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* BERT Fine-tuned */}
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200">
+                <h3 className="font-semibold text-orange-900 mb-3 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  BERT Fine-tuned Especializado
+                </h3>
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white rounded p-3 border border-orange-200">
+                      <h4 className="font-medium text-orange-800 mb-2">Arquitetura Base</h4>
+                      <div className="text-sm text-orange-700 space-y-1">
+                        <div>• DistilBERT (versão otimizada)</div>
+                        <div>• 6 camadas Transformer</div>
+                        <div>• 66M parâmetros</div>
+                        <div>• Atenção multi-cabeça</div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded p-3 border border-orange-200">
+                      <h4 className="font-medium text-orange-800 mb-2">Fine-tuning</h4>
+                      <div className="text-sm text-orange-700 space-y-1">
+                        <div>• Treinado com dados reais</div>
+                        <div>• Classificação de story points</div>
+                        <div>• Otimizado para contexto de software</div>
+                        <div>• Validação cruzada</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded p-3 border border-orange-200">
+                    <h4 className="font-medium text-orange-800 mb-2">Processo de Inferência</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-6 h-6 bg-orange-600 text-white rounded-full text-xs font-bold">
+                          1
+                        </div>
+                        <div className="flex-1">
+                          <h5 className="font-medium text-orange-800">Preparação do Contexto</h5>
+                          <p className="text-sm text-orange-700">
+                            Combina título e descrição em um texto único para análise contextual completa
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-6 h-6 bg-orange-600 text-white rounded-full text-xs font-bold">
+                          2
+                        </div>
+                        <div className="flex-1">
+                          <h5 className="font-medium text-orange-800">Tokenização e Encoding</h5>
+                          <p className="text-sm text-orange-700">
+                            Converte o texto em tokens e aplica encoding posicional para capturar relações semânticas
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-6 h-6 bg-orange-600 text-white rounded-full text-xs font-bold">
+                          3
+                        </div>
+                        <div className="flex-1">
+                          <h5 className="font-medium text-orange-800">Análise Transformer</h5>
+                          <p className="text-sm text-orange-700">
+                            Camadas de atenção analisam relações entre palavras e extraem features contextuais
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-6 h-6 bg-orange-600 text-white rounded-full text-xs font-bold">
+                          4
+                        </div>
+                        <div className="flex-1">
+                          <h5 className="font-medium text-orange-800">Classificação Final</h5>
+                          <p className="text-sm text-orange-700">
+                            Camada de classificação especializada retorna story point com score de confiança
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -738,13 +842,13 @@ export function HelpGuide() {
                       3
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-medium text-orange-800">Usar IA (Opcional)</h4>
+                      <h4 className="font-medium text-orange-800">Usar BERT e IA (Opcional)</h4>
                       <p className="text-sm text-orange-700 mb-2">Para análise mais avançada:</p>
                       <div className="bg-white rounded p-3 border border-orange-200 text-sm">
                         <div className="space-y-1">
-                          <div>• Clique em "Analisar com Groq" ou "Analisar com Grok"</div>
-                          <div>• Aguarde alguns segundos para a resposta</div>
-                          <div>• Compare com a estimativa baseada em regras</div>
+                          <div>• Clique em "Analisar com BERT" para análise especializada</div>
+                          <div>• Use "Analisar com Groq" ou "Analisar com Grok" para IA generativa</div>
+                          <div>• Compare as diferentes estimativas</div>
                         </div>
                       </div>
                     </div>
@@ -854,7 +958,7 @@ export function HelpGuide() {
                   <div className="flex items-center gap-2 text-sm">
                     <ArrowRight className="h-3 w-3 text-green-600" />
                     <span>
-                      <strong>Semana 2-3:</strong> Use estimativa baseada em regras + IA para novas tarefas
+                      <strong>Semana 2-3:</strong> Use estimativa baseada em regras + BERT + IA para novas tarefas
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
@@ -898,9 +1002,18 @@ export function HelpGuide() {
                 <div className="border rounded-lg p-4">
                   <h4 className="font-medium text-slate-900 mb-2">❓ Qual método de estimativa é mais preciso?</h4>
                   <p className="text-sm text-slate-700">
-                    Depende do contexto. A estimativa baseada em regras é consistente e explicável. A IA oferece análise
-                    mais sofisticada. O ML se torna mais preciso com o tempo. Recomendamos usar múltiplos métodos e
-                    comparar.
+                    Depende do contexto. A estimativa baseada em regras é consistente e explicável. O BERT fine-tuned é
+                    especializado em story points. A IA oferece análise mais sofisticada. O ML se torna mais preciso com
+                    o tempo. Recomendamos usar múltiplos métodos e comparar.
+                  </p>
+                </div>
+
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-medium text-slate-900 mb-2">❓ O que é o modelo BERT fine-tuned?</h4>
+                  <p className="text-sm text-slate-700">
+                    É um modelo DistilBERT que foi especificamente treinado (fine-tuned) com dados reais de story points
+                    de projetos de software. Ele combina título e descrição para fazer uma análise contextual
+                    especializada, retornando tanto a estimativa quanto a confiança da predição.
                   </p>
                 </div>
 
@@ -916,15 +1029,17 @@ export function HelpGuide() {
                   <h4 className="font-medium text-slate-900 mb-2">❓ Os dados ficam seguros?</h4>
                   <p className="text-sm text-slate-700">
                     Sim! Todos os dados são armazenados localmente no seu navegador. O modelo ML também é salvo
-                    localmente. Nada é enviado para servidores externos, exceto quando você usa IA (Groq/Grok).
+                    localmente. Para o BERT e IA (Groq/Grok), apenas o texto da tarefa é enviado para processamento, sem
+                    armazenamento permanente.
                   </p>
                 </div>
 
                 <div className="border rounded-lg p-4">
-                  <h4 className="font-medium text-slate-900 mb-2">❓ E se a IA não funcionar?</h4>
+                  <h4 className="font-medium text-slate-900 mb-2">❓ E se a IA ou BERT não funcionarem?</h4>
                   <p className="text-sm text-slate-700">
                     A estimativa baseada em regras sempre funciona como fallback. O sistema foi projetado para ser
-                    resiliente - você sempre terá uma estimativa disponível.
+                    resiliente - você sempre terá uma estimativa disponível, mesmo se os serviços externos estiverem
+                    indisponíveis.
                   </p>
                 </div>
 
@@ -943,6 +1058,15 @@ export function HelpGuide() {
                     legíveis geralmente resultam em estimativas mais precisas e melhor entendimento da equipe.
                   </p>
                 </div>
+
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-medium text-slate-900 mb-2">❓ Qual a diferença entre BERT e IA generativa?</h4>
+                  <p className="text-sm text-slate-700">
+                    O BERT é especializado em classificação de story points, treinado especificamente para essa tarefa.
+                    A IA generativa (Groq/Grok) oferece análise mais ampla e contextual, mas não foi treinada
+                    especificamente para story points. Use ambos para comparação e maior precisão.
+                  </p>
+                </div>
               </div>
 
               <Alert className="bg-green-50 border-green-200">
@@ -955,7 +1079,8 @@ export function HelpGuide() {
                   </p>
                   <p className="text-sm">
                     <strong>Lembre-se:</strong> Story points são relativos à sua equipe. Use esta ferramenta como apoio,
-                    não como substituto do julgamento humano.
+                    não como substituto do julgamento humano. O BERT fine-tuned oferece uma perspectiva especializada,
+                    mas a decisão final sempre deve considerar o contexto específico do seu projeto.
                   </p>
                 </AlertDescription>
               </Alert>

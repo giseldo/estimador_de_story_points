@@ -1,4 +1,3 @@
-// Simplified BERT API that gracefully handles loading issues
 export async function POST(req: Request) {
   try {
     const { title, description } = await req.json()
@@ -7,84 +6,144 @@ export async function POST(req: Request) {
       return Response.json({ error: "Título e descrição são obrigatórios" }, { status: 400 })
     }
 
-    // Try to load transformers dynamically
-    let transformers
-    try {
-      transformers = await import("@xenova/transformers")
-    } catch (importError) {
-      console.error("Failed to import transformers:", importError)
+    // Verificar se a API key está disponível
+    if (!process.env.HUGGINGFACE_API_KEY) {
       return Response.json(
         {
-          error: "TRANSFORMERS_NOT_AVAILABLE",
-          message: "Transformers.js não está disponível",
-          userMessage: "O modelo BERT não está disponível no momento. Use outros métodos de estimativa.",
+          error: "API_KEY_MISSING",
+          message: "Chave da API do Hugging Face não configurada.",
+          userMessage: "Modelo BERT não está configurado. Use outros métodos de estimativa.",
+        },
+        { status: 401 },
+      )
+    }
+
+    // Combinar título e descrição em um contexto único
+    const context = `${title}. ${description}`
+
+    console.log("Enviando para BERT:", { context: context.substring(0, 100) + "..." })
+
+    // Usar a Hugging Face Inference API com URL corrigida
+    const response = await fetch(
+      "https://api-inference.huggingface.co/models/giseldo/distilbert_bert_uncased_finetuned_story_point",
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        body: JSON.stringify({
+          inputs: context,
+          options: {
+            wait_for_model: true,
+          },
+        }),
+      },
+    )
+
+    console.log("Resposta da API:", response.status, response.statusText)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error("Erro na API do Hugging Face:", errorText)
+
+      // Verificar se é erro 404 (modelo não encontrado)
+      if (response.status === 404) {
+        return Response.json(
+          {
+            error: "MODEL_NOT_FOUND",
+            message: "Modelo BERT não encontrado no Hugging Face.",
+            userMessage:
+              "O modelo BERT não está disponível. Verifique se o modelo existe ou use outros métodos de estimativa.",
+          },
+          { status: 404 },
+        )
+      }
+
+      if (response.status === 503) {
+        return Response.json(
+          {
+            error: "MODEL_LOADING",
+            message: "Modelo está carregando. Tente novamente em alguns segundos.",
+            userMessage: "O modelo BERT está inicializando. Aguarde alguns segundos e tente novamente.",
+          },
+          { status: 503 },
+        )
+      }
+
+      if (response.status === 429) {
+        return Response.json(
+          {
+            error: "RATE_LIMIT_EXCEEDED",
+            message: "Limite de requisições atingido.",
+            userMessage: "Muitas requisições simultâneas. Aguarde alguns segundos e tente novamente.",
+          },
+          { status: 429 },
+        )
+      }
+
+      if (response.status === 401 || response.status === 403) {
+        return Response.json(
+          {
+            error: "API_KEY_ERROR",
+            message: "Problema com a chave da API do Hugging Face.",
+            userMessage: "Erro de autenticação. Verifique a configuração da API ou use outros métodos de estimativa.",
+          },
+          { status: 401 },
+        )
+      }
+
+      return Response.json(
+        {
+          error: "API_ERROR",
+          message: "Erro na comunicação com o modelo BERT.",
+          userMessage: "Erro temporário no serviço BERT. Tente novamente em alguns instantes.",
         },
         { status: 503 },
       )
     }
 
-    // Combine title and description into a single context
-    const context = `${title} ${description}`
+    const result = await response.json()
+    console.log("Resultado do BERT:", result)
 
-    try {
-      // Try to create pipeline with minimal configuration
-      const classifier = await transformers.pipeline(
-        "text-classification",
-        "Xenova/distilbert-base-uncased-finetuned-sst-2-english", // Use a simpler, more reliable model
-        {
-          quantized: false, // Disable quantization to avoid ONNX issues
-          device: "cpu", // Force CPU to avoid WebGL issues
-        },
-      )
+    // O modelo retorna um array de classificações com labels e scores
+    if (Array.isArray(result) && result.length > 0) {
+      // Encontrar a classificação com maior score
+      const bestPrediction = result.reduce((prev, current) => (prev.score > current.score ? prev : current))
 
-      const result = await classifier(context)
+      // Extrair o número do label (assumindo que o label é o story point)
+      const pointsMatch = bestPrediction.label.match(/\d+/)
+      const points = pointsMatch ? Number.parseInt(pointsMatch[0], 10) : null
 
-      if (!result || !result[0]) {
-        throw new Error("Modelo não retornou resultados válidos")
-      }
+      // Verificar se o número está na sequência de Fibonacci
+      const fibonacciPoints = [1, 2, 3, 5, 8, 13, 21]
 
-      // Since we're using a sentiment model as fallback, map sentiment to story points
-      const sentiment = result[0].label.toLowerCase()
-      const confidence = result[0].score
-
-      // Map sentiment to story points (this is a simplified approach)
-      let points: number
-      if (sentiment.includes("positive")) {
-        // Positive sentiment might indicate clearer, simpler tasks
-        points = confidence > 0.8 ? 2 : 3
+      if (points && fibonacciPoints.includes(points)) {
+        return Response.json({
+          points,
+          confidence: bestPrediction.score,
+          allPredictions: result,
+        })
       } else {
-        // Negative sentiment might indicate more complex, unclear tasks
-        points = confidence > 0.8 ? 8 : 5
+        // Se não for um número válido da sequência, usar o mais próximo
+        const closestPoint = fibonacciPoints.reduce((prev, curr) =>
+          Math.abs(curr - (points || 3)) < Math.abs(prev - (points || 3)) ? curr : prev,
+        )
+
+        return Response.json({
+          points: closestPoint,
+          confidence: bestPrediction.score,
+          note: "Estimativa ajustada para sequência de Fibonacci",
+          allPredictions: result,
+        })
       }
-
-      // Adjust based on text length
-      const wordCount = context.split(/\s+/).length
-      if (wordCount > 100) points = Math.min(21, points + 2)
-      if (wordCount < 20) points = Math.max(1, points - 1)
-
+    } else {
+      console.error("Formato de resposta inesperado:", result)
       return Response.json({
-        points,
-        confidence,
-        label: result[0].label,
-        note: "Usando modelo de sentimento como aproximação",
+        points: 3,
+        confidence: 0.5,
+        note: "Estimativa padrão usada devido a resposta não padrão do modelo",
       })
-    } catch (modelError: any) {
-      console.error("Erro ao processar com modelo:", modelError)
-
-      // Provide a rule-based fallback estimation
-      const fallbackPoints = estimateFallbackPoints(context)
-
-      return Response.json(
-        {
-          error: "MODEL_FALLBACK",
-          message: "Usando estimativa de fallback",
-          userMessage: "Modelo BERT indisponível. Usando estimativa alternativa baseada em análise de texto.",
-          points: fallbackPoints,
-          confidence: 0.6,
-          label: "FALLBACK",
-        },
-        { status: 200 }, // Return 200 since we have a fallback
-      )
     }
   } catch (error) {
     console.error("Erro ao estimar story points com BERT:", error)
@@ -92,49 +151,9 @@ export async function POST(req: Request) {
       {
         error: "INTERNAL_ERROR",
         message: "Erro interno do servidor",
-        userMessage: "Erro interno. Use outros métodos de estimativa.",
+        userMessage: "Erro interno. Tente novamente ou use outros métodos de estimativa.",
       },
       { status: 500 },
     )
   }
-}
-
-// Fallback estimation function
-function estimateFallbackPoints(text: string): number {
-  const lowerText = text.toLowerCase()
-  let score = 3 // Base score
-
-  // Complexity indicators
-  const complexWords = ["complex", "algorithm", "integration", "architecture", "optimization", "security"]
-  const simpleWords = ["simple", "basic", "easy", "quick", "minor", "small"]
-
-  complexWords.forEach((word) => {
-    if (lowerText.includes(word)) score += 2
-  })
-
-  simpleWords.forEach((word) => {
-    if (lowerText.includes(word)) score -= 1
-  })
-
-  // Length factor
-  const wordCount = text.split(/\s+/).length
-  if (wordCount > 100) score += 2
-  if (wordCount < 20) score -= 1
-
-  // Map to Fibonacci
-  const fibonacciPoints = [1, 2, 3, 5, 8, 13, 21]
-  const clampedScore = Math.max(1, Math.min(21, score))
-
-  let closest = fibonacciPoints[0]
-  let minDiff = Math.abs(clampedScore - closest)
-
-  for (const fib of fibonacciPoints) {
-    const diff = Math.abs(clampedScore - fib)
-    if (diff < minDiff) {
-      minDiff = diff
-      closest = fib
-    }
-  }
-
-  return closest
 }

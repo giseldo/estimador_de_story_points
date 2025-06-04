@@ -20,11 +20,10 @@ import { estimateStoryPoints } from "@/lib/estimator"
 import { trainModel, predictStoryPoints, saveModel, loadModel } from "@/lib/ml-model"
 import type { Task, ModelStats as ModelStatsType } from "@/lib/types"
 import type * as tf from "@tensorflow/tfjs"
-import { BrainCircuit, CheckCircle } from "lucide-react"
+import { BrainCircuit, CheckCircle, Cpu } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { EstimationExplanation } from "@/components/estimation-explanation"
 import { AIFallbackNotice } from "@/components/ai-fallback-notice"
-import { Loader2, AlertCircle } from "lucide-react"
 
 export function TaskEstimator() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -34,6 +33,8 @@ export function TaskEstimator() {
   const [estimatedPoints, setEstimatedPoints] = useState<number | null>(null)
   const [mlEstimatedPoints, setMlEstimatedPoints] = useState<number | null>(null)
   const [aiEstimatedPoints, setAiEstimatedPoints] = useState<number | null>(null)
+  const [bertEstimatedPoints, setBertEstimatedPoints] = useState<number | null>(null)
+  const [bertConfidence, setBertConfidence] = useState<number | null>(null)
   const [manualPoints, setManualPoints] = useState<number | null>(null)
   const [model, setModel] = useState<tf.LayersModel | null>(null)
   const [modelStats, setModelStats] = useState<ModelStatsType>({
@@ -46,11 +47,9 @@ export function TaskEstimator() {
   const [aiModel, setAiModel] = useState<string | null>(null)
   const [isAiLoading, setIsAiLoading] = useState(false)
   const [aiError, setAiError] = useState<string | null>(null)
-  const [importSuccess, setImportSuccess] = useState<number | null>(null)
-  const [bertEstimatedPoints, setBertEstimatedPoints] = useState<number | null>(null)
   const [isBertLoading, setIsBertLoading] = useState(false)
   const [bertError, setBertError] = useState<string | null>(null)
-  const [bertConfidence, setBertConfidence] = useState<number | null>(null)
+  const [importSuccess, setImportSuccess] = useState<number | null>(null)
 
   // Inicializar TensorFlow.js e carregar o modelo
   useEffect(() => {
@@ -121,9 +120,12 @@ export function TaskEstimator() {
       setManualPoints(points)
     }
 
-    // Limpar estimativa de IA anterior
+    // Limpar estimativas anteriores
     setAiEstimatedPoints(null)
     setAiError(null)
+    setBertEstimatedPoints(null)
+    setBertError(null)
+    setBertConfidence(null)
   }
 
   const handleAiEstimate = async (selectedModel: string) => {
@@ -172,6 +174,57 @@ export function TaskEstimator() {
       setAiError("Erro de conexão. Verifique sua internet e tente novamente.")
     } finally {
       setIsAiLoading(false)
+    }
+  }
+
+  const handleBertEstimate = async () => {
+    if (!title || !description) return
+
+    setIsBertLoading(true)
+    setBertError(null)
+
+    try {
+      const response = await fetch("/api/estimate-bert", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title,
+          description,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        console.error("Erro na resposta BERT:", data)
+
+        if (response.status === 404) {
+          setBertError("Modelo BERT não encontrado. Verifique se o modelo existe no Hugging Face.")
+        } else if (response.status === 503) {
+          setBertError(data.userMessage || "Modelo BERT está carregando. Tente novamente em alguns segundos.")
+        } else if (response.status === 429) {
+          setBertError(data.userMessage || "Limite de requisições atingido. Tente novamente mais tarde.")
+        } else if (response.status === 401) {
+          setBertError(data.userMessage || "Erro de configuração da API do Hugging Face.")
+        } else {
+          setBertError(data.userMessage || data.error || "Erro ao obter estimativa do BERT")
+        }
+        return
+      }
+
+      setBertEstimatedPoints(data.points)
+      setBertConfidence(data.confidence)
+      // Atualizar a estimativa manual com a estimativa do BERT
+      setManualPoints(data.points)
+
+      console.log("Estimativa BERT bem-sucedida:", data)
+    } catch (error) {
+      console.error("Erro ao obter estimativa do BERT:", error)
+      setBertError("Erro de conexão. Verifique sua internet e tente novamente.")
+    } finally {
+      setIsBertLoading(false)
     }
   }
 
@@ -264,70 +317,17 @@ export function TaskEstimator() {
     setEstimatedPoints(null)
     setMlEstimatedPoints(null)
     setAiEstimatedPoints(null)
+    setBertEstimatedPoints(null)
+    setBertConfidence(null)
     setAiModel(null)
     setManualPoints(null)
     setAiError(null)
-    setBertEstimatedPoints(null)
-    setIsBertLoading(false)
     setBertError(null)
-    setBertConfidence(null)
   }
 
   const handleTrainModel = () => {
     if (tasks.length >= 5) {
       trainModelWithTasks(tasks)
-    }
-  }
-
-  const handleBertEstimate = async () => {
-    if (!title || !description) return
-
-    setBertEstimatedPoints(null)
-    setIsBertLoading(true)
-    setBertError(null)
-    setBertConfidence(null)
-
-    try {
-      // First try the alternative client-side approach
-      try {
-        const { estimateWithBertAlternative } = await import("@/lib/bert-alternative")
-        const result = await estimateWithBertAlternative(title, description)
-
-        setBertEstimatedPoints(result.points)
-        setBertConfidence(result.confidence)
-        setManualPoints(result.points)
-        return
-      } catch (clientError) {
-        console.log("Client-side alternative failed, trying API:", clientError)
-      }
-
-      // Fallback to API
-      const response = await fetch("/api/estimate-bert", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title,
-          description,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        setBertError(data.userMessage || data.error || "Erro ao obter estimativa do BERT")
-        return
-      }
-
-      setBertEstimatedPoints(data.points)
-      setBertConfidence(data.confidence)
-      setManualPoints(data.points)
-    } catch (error) {
-      console.error("Erro ao obter estimativa do BERT:", error)
-      setBertError("Análise de texto indisponível. Use outros métodos de estimativa.")
-    } finally {
-      setIsBertLoading(false)
     }
   }
 
@@ -427,15 +427,17 @@ export function TaskEstimator() {
                       )}
                     </div>
 
+                    {/* Adicionar a explicação da estimativa baseada em regras */}
                     <EstimationExplanation
                       description={description}
                       taskType={taskType}
                       estimatedPoints={estimatedPoints}
                     />
 
+                    {/* Seção de IA Generativa */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <Label>Análise com IA</Label>
+                        <Label>Análise com IA Generativa</Label>
                         <div className="flex gap-2">
                           <Button
                             variant="outline"
@@ -453,9 +455,6 @@ export function TaskEstimator() {
                           >
                             Analisar com Grok
                           </Button>
-                          <Button variant="outline" size="sm" onClick={handleBertEstimate} disabled={isBertLoading}>
-                            Análise de Texto
-                          </Button>
                         </div>
                       </div>
 
@@ -468,78 +467,104 @@ export function TaskEstimator() {
                         onSwitchModel={handleSwitchModel}
                       />
 
-                      {isBertLoading && (
-                        <div className="flex flex-col items-center justify-center p-4 border rounded-lg bg-slate-50">
-                          <div className="flex items-center gap-2">
-                            <Loader2 className="h-4 w-4 animate-spin text-slate-600" />
-                            <p className="text-sm font-medium text-slate-600">Analisando texto...</p>
-                          </div>
-                        </div>
+                      {!isAiLoading && !aiEstimatedPoints && !aiError && (
+                        <Alert variant="default" className="bg-blue-50 text-blue-800 border-blue-200">
+                          <BrainCircuit className="h-4 w-4" />
+                          <AlertTitle>Análise com IA Generativa disponível</AlertTitle>
+                          <AlertDescription>
+                            Utilize os modelos Groq ou Grok para obter uma estimativa baseada em IA generativa avançada.
+                          </AlertDescription>
+                        </Alert>
                       )}
+                    </div>
 
-                      {bertError && (
-                        <Alert variant="destructive" className="bg-red-50 border-red-200">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertTitle className="flex items-center justify-between">
-                            <span>Erro na análise de texto</span>
-                            <Button variant="outline" size="sm" onClick={handleBertEstimate} className="ml-2">
-                              Tentar Novamente
-                            </Button>
-                          </AlertTitle>
-                          <AlertDescription className="mt-2">
-                            <p className="text-sm">{bertError}</p>
+                    {/* Nova Seção de BERT */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label>Análise com BERT Fine-tuned</Label>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleBertEstimate}
+                          disabled={isBertLoading}
+                          className="bg-gradient-to-r from-orange-50 to-red-50 border-orange-200 hover:from-orange-100 hover:to-red-100"
+                        >
+                          <Cpu className="h-4 w-4 mr-2" />
+                          {isBertLoading ? "Analisando..." : "Analisar com BERT"}
+                        </Button>
+                      </div>
+
+                      {/* Status do BERT */}
+                      {isBertLoading && (
+                        <Alert className="bg-orange-50 border-orange-200">
+                          <Cpu className="h-4 w-4 text-orange-600 animate-spin" />
+                          <AlertTitle className="text-orange-900">Processando com BERT</AlertTitle>
+                          <AlertDescription className="text-orange-800">
+                            O modelo BERT fine-tuned está analisando sua tarefa...
                           </AlertDescription>
                         </Alert>
                       )}
 
-                      {bertEstimatedPoints !== null && !isBertLoading && !bertError && (
-                        <div className="flex flex-col items-center justify-center p-4 border rounded-lg bg-slate-50">
-                          <p className="text-sm font-medium text-slate-600">Análise de Texto Avançada</p>
-                          <div className="mt-2 flex items-center justify-center">
-                            <Badge
-                              variant="secondary"
-                              className="text-2xl px-4 py-2 bg-amber-100 text-amber-800 hover:bg-amber-100"
-                            >
-                              {bertEstimatedPoints} {bertEstimatedPoints === 1 ? "ponto" : "pontos"}
-                            </Badge>
-                          </div>
-                          {bertConfidence !== null && (
-                            <p className="text-xs text-slate-500 mt-2">
-                              Confiança: {(bertConfidence * 100).toFixed(1)}%
-                            </p>
-                          )}
-                        </div>
+                      {bertEstimatedPoints !== null && !isBertLoading && (
+                        <Alert className="bg-gradient-to-r from-orange-50 to-red-50 border-orange-200">
+                          <Cpu className="h-4 w-4 text-orange-600" />
+                          <AlertTitle className="text-orange-900">Estimativa BERT</AlertTitle>
+                          <AlertDescription className="text-orange-800">
+                            <div className="flex items-center justify-between mt-2">
+                              <div>
+                                <Badge className="text-lg px-3 py-1 bg-orange-100 text-orange-800 hover:bg-orange-100">
+                                  {bertEstimatedPoints} {bertEstimatedPoints === 1 ? "ponto" : "pontos"}
+                                </Badge>
+                                {bertConfidence && (
+                                  <div className="text-xs mt-1">Confiança: {(bertConfidence * 100).toFixed(1)}%</div>
+                                )}
+                              </div>
+                            </div>
+                          </AlertDescription>
+                        </Alert>
                       )}
 
-                      {!isAiLoading &&
-                        !aiEstimatedPoints &&
-                        !aiError &&
-                        !isBertLoading &&
-                        !bertEstimatedPoints &&
-                        !bertError && (
-                          <Alert variant="default" className="bg-blue-50 text-blue-800 border-blue-200">
-                            <BrainCircuit className="h-4 w-4" />
-                            <AlertTitle>Análise com IA disponível</AlertTitle>
-                            <AlertDescription>
-                              Utilize os modelos Groq, Grok ou análise de texto avançada para obter estimativas baseadas
-                              em IA.
-                            </AlertDescription>
-                          </Alert>
-                        )}
+                      {bertError && (
+                        <Alert variant="destructive" className="bg-red-50 border-red-200">
+                          <AlertTitle className="text-red-900">Erro no BERT</AlertTitle>
+                          <AlertDescription className="text-red-800">
+                            {bertError}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleBertEstimate}
+                              className="ml-2 h-6 text-xs"
+                            >
+                              Tentar novamente
+                            </Button>
+                          </AlertDescription>
+                        </Alert>
+                      )}
 
-                      {/* Show fallback notice when AI has issues */}
-                      {aiError &&
+                      {!isBertLoading && !bertEstimatedPoints && !bertError && (
+                        <Alert variant="default" className="bg-orange-50 text-orange-800 border-orange-200">
+                          <Cpu className="h-4 w-4" />
+                          <AlertTitle>Análise com BERT disponível</AlertTitle>
+                          <AlertDescription>
+                            Utilize o modelo BERT fine-tuned especificamente para estimativa de story points, treinado
+                            com dados de projetos reais.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </div>
+
+                    {/* Show fallback notice when AI has issues */}
+                    {(aiError || bertError) &&
+                      ((aiError &&
                         (aiError.includes("créditos") ||
                           aiError.includes("CREDIT_LIMIT") ||
                           aiError.includes("não está disponível") ||
-                          aiError.includes("configuração da API")) && (
-                          <AIFallbackNotice
-                            ruleBasedPoints={estimatedPoints}
-                            mlPoints={mlEstimatedPoints}
-                            bertPoints={bertEstimatedPoints}
-                          />
-                        )}
-                    </div>
+                          aiError.includes("configuração da API"))) ||
+                        (bertError &&
+                          (bertError.includes("configuração da API") ||
+                            bertError.includes("Modelo BERT está carregando")))) && (
+                        <AIFallbackNotice ruleBasedPoints={estimatedPoints} mlPoints={mlEstimatedPoints} />
+                      )}
 
                     <div className="space-y-2 pt-2">
                       <Label htmlFor="manual-points">Ajuste Manual (se necessário)</Label>
@@ -576,6 +601,7 @@ export function TaskEstimator() {
               </CardFooter>
             </Card>
 
+            {/* Adicionar os indicadores de legibilidade */}
             {description && description.trim().length > 0 && <ReadabilityIndicators description={description} />}
           </div>
         </TabsContent>
