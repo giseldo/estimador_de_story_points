@@ -40,8 +40,9 @@ export async function POST(req: Request) {
           maxTokens: 10,
         })
       } else if (model === "grok") {
+        // Use the correct xAI Grok model name
         result = await generateText({
-          model: xai("grok-1"),
+          model: xai("grok-3-mini"),
           prompt,
           temperature: 0.2,
           maxTokens: 10,
@@ -74,6 +75,28 @@ export async function POST(req: Request) {
             userMessage: "Muitas solicitações simultâneas. Aguarde alguns segundos e tente novamente.",
           },
           { status: 429 },
+        )
+      }
+
+      if (apiError.message?.includes("does not exist") || apiError.message?.includes("does not have access")) {
+        return Response.json(
+          {
+            error: "MODEL_ACCESS_ERROR",
+            message: "Modelo não disponível ou sem acesso.",
+            userMessage: `O modelo ${model === "grok" ? "Grok" : "Groq"} não está disponível no momento. Tente o outro modelo ou use a estimativa baseada em regras.`,
+          },
+          { status: 403 },
+        )
+      }
+
+      if (apiError.message?.includes("API key")) {
+        return Response.json(
+          {
+            error: "API_KEY_ERROR",
+            message: "Problema com a chave da API.",
+            userMessage: "Erro de configuração da API. Use a estimativa baseada em regras por enquanto.",
+          },
+          { status: 401 },
         )
       }
 

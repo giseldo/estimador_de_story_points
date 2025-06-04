@@ -148,6 +148,10 @@ export function TaskEstimator() {
           setAiError(data.userMessage || "Limite de requisições atingido. Tente novamente mais tarde.")
         } else if (response.status === 503) {
           setAiError(data.userMessage || "Serviço temporariamente indisponível.")
+        } else if (response.status === 403) {
+          setAiError(data.userMessage || "Modelo não disponível.")
+        } else if (response.status === 401) {
+          setAiError(data.userMessage || "Erro de configuração da API.")
         } else {
           setAiError(data.userMessage || data.error || "Erro ao obter estimativa da IA")
         }
@@ -170,6 +174,11 @@ export function TaskEstimator() {
     if (aiModel) {
       handleAiEstimate(aiModel)
     }
+  }
+
+  // Add switch model function
+  const handleSwitchModel = (newModel: string) => {
+    handleAiEstimate(newModel)
   }
 
   const handleSave = () => {
@@ -389,6 +398,7 @@ export function TaskEstimator() {
                         points={aiEstimatedPoints}
                         error={aiError}
                         onRetry={handleRetryAiEstimate}
+                        onSwitchModel={handleSwitchModel}
                       />
 
                       {!isAiLoading && !aiEstimatedPoints && !aiError && (
@@ -401,10 +411,14 @@ export function TaskEstimator() {
                         </Alert>
                       )}
 
-                      {/* Show fallback notice when AI has credit limit issues */}
-                      {aiError && (aiError.includes("créditos") || aiError.includes("CREDIT_LIMIT")) && (
-                        <AIFallbackNotice ruleBasedPoints={estimatedPoints} mlPoints={mlEstimatedPoints} />
-                      )}
+                      {/* Show fallback notice when AI has issues */}
+                      {aiError &&
+                        (aiError.includes("créditos") ||
+                          aiError.includes("CREDIT_LIMIT") ||
+                          aiError.includes("não está disponível") ||
+                          aiError.includes("configuração da API")) && (
+                          <AIFallbackNotice ruleBasedPoints={estimatedPoints} mlPoints={mlEstimatedPoints} />
+                        )}
                     </div>
 
                     <div className="space-y-2 pt-2">
